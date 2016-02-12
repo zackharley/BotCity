@@ -31,11 +31,11 @@ void setup() {
   pinMode(RIGHT_MOTOR_SPEED, OUTPUT);
   pinMode(LEFT_MOTOR_SPEED, OUTPUT);
   Serial.begin(9600);
+  while (digitalRead(BUTTON_PIN));
 }
 
 void loop()
 {
-  while (digitalRead(BUTTON_PIN));
   setMotors(1, 1, -1);
   reactBumpers();
 }
@@ -52,23 +52,31 @@ void setMotors(int Ldir, int Rdir, int rotations) {
 
 void reactBumpers() {
   while (true) {
+    delay(2000);
     leftBumperValue = digitalRead(LEFT_BUMPER_PIN);
+    
     rightBumperValue = digitalRead(RIGHT_BUMPER_PIN);
+    
     Serial.println(leftBumperValue);
     Serial.println(rightBumperValue);
   
     if (!leftBumperValue && !rightBumperValue) {
+      Serial.println("Both");
       setMotors(0, 0, FULL_SPIN);
+      setMotors(1, 0, FULL_SPIN);
+      
       break;
     }
     else if (!leftBumperValue) {
       setMotors(0, 0, FULL_SPIN);
-      setMotors(1, 0, FULL_SPIN);
+      setMotors(1, 0, FULL_SPIN/4);
+      Serial.println("Left");
       break;
     }
     else if (!rightBumperValue) {
       setMotors(0, 0, FULL_SPIN);
-      setMotors(0, 1, FULL_SPIN);
+      setMotors(0, 1, FULL_SPIN/4);
+      Serial.println("Right");
       break;
     }
   }

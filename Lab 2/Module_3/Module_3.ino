@@ -1,8 +1,8 @@
 #include<Servo.h>
 
-int panPin = 8;
-int tiltPin = 9;
-int gripPin = 10;
+int panPin = 11;
+int tiltPin = 10;
+int gripPin = 12;
 
 int sensorPin = 5;
 int LEDpin = 13;
@@ -31,7 +31,7 @@ void setup() {
 void loop() {
 
     //setPan(90);
-    setTilt(160);
+    setTilt(180);
     setGrip(grip);
 
     delay(1000);
@@ -41,7 +41,6 @@ void loop() {
     while(sensorValue <= gripThres) {
       sensorValue = analogRead(sensorPin);    
       grip = grip + .05;
-      setTilt(180-grip);
       setGrip(grip);
       Serial.println(sensorValue);
       digitalWrite(LEDpin, LOW);
