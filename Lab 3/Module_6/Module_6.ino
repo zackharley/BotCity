@@ -56,7 +56,7 @@ void AdjustSpeeds() {
   Rspeed = 100;
   int go = 1;
   while (go==1) {
-    delay(2000);
+    delay(1000);
     leftBumperValue = digitalRead(LEFT_BUMPER_PIN);
     rightBumperValue = digitalRead(RIGHT_BUMPER_PIN);
 
