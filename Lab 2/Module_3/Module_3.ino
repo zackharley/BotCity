@@ -1,11 +1,10 @@
 #include<Servo.h>
 
 int panPin = 11;
-int tiltPin = 10;
-int gripPin = 12;
+int tiltPin = 12;
+int gripPin = 13;
 
-int sensorPin = 5;
-int LEDpin = 13;
+int sensorPin = 1;
 
 int gripThres = 500;
 
@@ -15,8 +14,6 @@ double grip = 50;
 int sensorValue = 0;
 
 void setup() {
-
-  pinMode(LEDpin, OUTPUT);
   
   tiltServo.attach(tiltPin);
   panServo.attach(panPin);
@@ -24,7 +21,6 @@ void setup() {
   
   setPan(90);
   setTilt(180);
-  
   Serial.begin(9600);
 }
 
@@ -40,17 +36,29 @@ void loop() {
 
     while(sensorValue <= gripThres) {
       sensorValue = analogRead(sensorPin);    
-      grip = grip + .05;
+      grip = grip + .5;
+      if(grip> 75)
+        grip=0;    
       setGrip(grip);
-      Serial.println(sensorValue);
-      digitalWrite(LEDpin, LOW);
+      Serial.println(grip);
+     
     }
       grip = 0;
-      digitalWrite(LEDpin, HIGH);
+    
       delay(1000);
   
 }
-
+void grabBall(){
+  while(sensorValue <= gripThres) {
+      sensorValue = analogRead(sensorPin);    
+      grip = grip + .5;
+      if(grip> 75)
+        grip=0;  
+      setGrip(grip);
+      Serial.println(grip);
+     
+    }
+}
 void setPan(int angle) {
   panServo.write(angle);
 }

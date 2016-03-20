@@ -31,6 +31,7 @@ void setup() {
   pinMode(RIGHT_MOTOR_SPEED, OUTPUT);
   pinMode(LEFT_MOTOR_SPEED, OUTPUT);
   Serial.begin(9600);
+  Serial.println("STARTING");
   Lspeed = EEPROM.read(0);
   Rspeed = EEPROM.read(1);
 }

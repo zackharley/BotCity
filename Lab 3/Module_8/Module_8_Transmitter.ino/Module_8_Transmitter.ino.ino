@@ -3,15 +3,15 @@ QSerial IRserial;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(10,INPUT);
-  IRserial.attach(10,-1);
-  Serial.begin(9600);
+ pinMode(3,OUTPUT);
+ IRserial.attach(-1,3);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
-  int val = IRserial.receive(200);
-  if(val!=0)
-    Serial.println((char)val);
+  IRserial.transmit('Y');
+  IRserial.transmit('E');
+  IRserial.transmit('S');
+  IRserial.transmit('!');
+  delay(100);
 }
