@@ -1,4 +1,4 @@
-//////////////////////////////
+////////////////////////////
 //ELEC299-Winter2016
 //////////////////////////////
 // “Project”
@@ -38,7 +38,7 @@
 //DEFINED CONSTANTS
 #define gripThres            500
 #define maxGripAngle         75
-#define colourThres          900
+#define colourThres          915
 
 //VARIABLE DECLARATION
 int gripValue = 0;
@@ -78,17 +78,90 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   lineTrack();
+  grabBall();
   while(true);
 }
+
+//METHODS
+//SECTION 1: BASIC MOTOR CONTROL
+void IRreceive(){
+  IRval = -1;
+  while(IRval > 2 || IRval <0){
+  IRval = IRserial.receive(200);
+  IRval = IRval - 48;
+  }
+}
+void grabBall(){
+  lSpeed = 100;
+  rSpeed = 100;
+  setMotors(0,0);
+  delay(100);
+  lSpeed = 0;
+  rSpeed = 0;
+  
+  setMotors(0,0);
+  setPan(90);
+  lowerArm();
+  while(gripValue <= gripThres) {
+      gripValue = analogRead(gripRead);    
+      gripAngle = gripAngle + .5;
+      
+      if(gripAngle > maxGripAngle){
+        gripAngle=0;
+        setGrip(0);
+        delay(200);
+        setTilt(180);
+        lowerArm();
+      }
+      setGrip(gripAngle);
+      Serial.println(gripAngle);
+    }
+  setTilt(180);
+}
+
+void lineTrack(){
+  lSpeed = 100;
+  rSpeed = 100;
+  //setMotors(1,1);
+  lBump = digitalRead(LEFT_BUMPER_PIN);
+  rBump = digitalRead(RIGHT_BUMPER_PIN);
+  
+  while(lBump==1 && rBump == 1){
+    lLev = getColor(left);
+    rLev = getColor(right);
+    mLev = getColor(middle);
+    lBump = digitalRead(LEFT_BUMPER_PIN);
+    rBump = digitalRead(RIGHT_BUMPER_PIN);
+    
+    if(lLev && !rLev){
+      lSpeed = 120;
+      rSpeed = 140;
+      //setMotors(1,1);
+      Serial.println("TURN LEFT");
+    }
+    else if(!lLev && rLev){
+      lSpeed = 140;
+      rSpeed = 120;
+      //setMotors(1,1);
+      Serial.println("TURN RIGHT");
+    }
+    else if(!lLev && !rLev && mLev){
+      lSpeed = 120;
+      rSpeed = 120;
+      //setMotors(1,1);
+      Serial.println("DRIVE STRAIGHT");
+    }
+  }
+}
+
 void getAnalogReadings(){
   //IRreceive();
   gripValue = analogRead(gripRead);
   distance = analogRead(IRsensor);
-  lLev =  getColor(left);
-  rLev =  getColor(right);
-  mLev =  getColor(middle);
+  lLev =  analogRead(left);
+  rLev =  analogRead(right);
+  mLev =  analogRead(middle);
   lBump = digitalRead(LEFT_BUMPER_PIN);
   rBump = digitalRead(RIGHT_BUMPER_PIN);
   Serial.print("Left: ");
@@ -110,76 +183,6 @@ void getAnalogReadings(){
   Serial.print("\n");
   delay(1000);
 }
-//METHODS
-//SECTION 1: BASIC MOTOR CONTROL
-void IRreceive(){
-  IRval = -1;
-  while(IRval > 2 || IRval <0){
-  IRval = IRserial.receive(200);
-  IRval = IRval - 48;
-  }
-}
-void grabBall(){
-  setPan(90);
-  lowerArm();
-  while(gripValue <= gripThres) {
-      gripValue = analogRead(gripRead);    
-      gripAngle = gripAngle + .5;
-      
-      if(gripAngle > maxGripAngle){
-        gripAngle=0;
-        setGrip(0);
-        delay(200);
-        setTilt(180);
-        lowerArm();
-      }
-      setGrip(gripAngle);
-      Serial.println(gripAngle);
-    }
-  setTilt(180);
-}
-void start(){
-  setMotors(
-}
-void lineTrack(){
-  lBump = digitalRead(LEFT_BUMPER_PIN);
-  rBump = digitalRead(RIGHT_BUMPER_PIN);
-  while(lBump==1 && rBump == 1){
-    lLev = getColor(left);
-    rLev = getColor(right);
-    mLev = getColor(middle);
-
-    if(!lLev && mLev && !rLev){
-      lSpeed = 80;
-      rSpeed = 80;
-      setMotors(1,1);
-    }
-    else if(lLev && !mLev && !rLev){
-      lSpeed = 85;
-      rSpeed = 75;
-      setMotors(1,1);
-    }
-    else if(!lLev && !mLev && rLev){
-      lSpeed = 75;
-      rSpeed = 85;
-      setMotors(1,1);
-    }
-    else{
-      
-    }
-    
-    lBump = digitalRead(LEFT_BUMPER_PIN);
-    rBump = digitalRead(RIGHT_BUMPER_PIN);
-    
-    lPrev = lLev;
-    rPrev = rLev;
-    mPrev = mLev;
-    
-  }
-  lSpeed = 0;
-  rSpeed = 0;
-  setMotors(1,1);  
-}
 void lowerArm(){
   float angle = 180;
   while(angle>=75){
@@ -187,20 +190,25 @@ void lowerArm(){
     setTilt(angle);
   }  
 }
+
 int getColor(int pin){
   if(analogRead(pin)>colourThres)
     return  1;
   return 0;
 }
+
 void setPan(int angle) {
   panServo.write(angle);
 }
+
 void setGrip(int angle) {
   gripServo.write(angle);
 }
+
 void setTilt(int angle) {
   tiltServo.write(angle);
 }
+
 void setMotors(int Ldir, int Rdir) {
   digitalWrite(LEFT_MOTOR_DIRECTION, Ldir);
   analogWrite(LEFT_MOTOR_SPEED,lSpeed);
