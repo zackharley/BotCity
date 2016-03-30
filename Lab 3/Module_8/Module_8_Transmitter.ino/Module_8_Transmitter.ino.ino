@@ -9,9 +9,6 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  IRserial.transmit('Y');
-  IRserial.transmit('E');
-  IRserial.transmit('S');
-  IRserial.transmit('!');
+  IRserial.transmit('1');
   delay(100);
 }
