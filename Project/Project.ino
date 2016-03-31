@@ -39,6 +39,7 @@
 #define gripThres            500
 #define maxGripAngle         75
 #define colourThres          915
+#define turnSpeed            85
 
 //VARIABLE DECLARATION
 int gripValue = 0;
@@ -78,11 +79,39 @@ void setup() {
 }
 
 void loop() {
-  lineTrack();
-  grabBall();
+  //int ball = getNumber();
+  //getAnalogReadings();
+  int ball = 0
+  ;
+  setAndRetrieve(ball);
+//  ball = 1;
+//  setAndRetrieve(ball);
+//  ball = 0; 
+//  setAndRetrieve(ball);
+  setMotors(0,0,0,0);
   while(true);
 }
-
+void setAndRetrieve(int N){
+  if (N==0){
+    driveRotate(90,1);
+    getBall();    
+    driveToCross(1);
+    driveRotate(90,0);
+    dunk();
+  }
+  else if (N==1){
+    getBall();
+    dunk();
+  }
+  else if (N==2){
+    driveRotate(90,0);
+    getBall();    
+    driveToCross(1);
+    driveRotate(90,1);
+    dunk();
+  }
+  driveToCross(0); 
+}
 //METHODS
 //SECTION 1: BASIC MOTOR CONTROL
 void IRreceive(){
@@ -92,15 +121,85 @@ void IRreceive(){
   IRval = IRval - 48;
   }
 }
-void grabBall(){
+void dunk(){
   lSpeed = 100;
   rSpeed = 100;
-  setMotors(0,0);
-  delay(100);
+  setMotors(1,1,rSpeed,lSpeed);
+  lBump = digitalRead(LEFT_BUMPER_PIN);
+  rBump = digitalRead(RIGHT_BUMPER_PIN);
+
+  while(lBump==1 && rBump == 1){
+    lLev = getColor(left);
+    rLev = getColor(right);
+    mLev = getColor(middle);
+    lBump = digitalRead(LEFT_BUMPER_PIN);
+    rBump = digitalRead(RIGHT_BUMPER_PIN);
+    
+    if(lLev && !rLev){
+      lSpeed = 100;
+      rSpeed = 160;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("TURN LEFT");
+    }
+    else if(!lLev && rLev){
+      lSpeed = 160;
+      rSpeed = 100;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("TURN RIGHT");
+    }
+    else if(!lLev && !rLev && mLev){
+      lSpeed = 120;
+      rSpeed = 120;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("DRIVE STRAIGHT");
+    }
+  }
+  setTilt(160);
+  setGrip(0);
+  setMotors(0,0,80,80);
+  delay(1000);
+  driveRotate(180,0);
+}
+void getBall(){
+  lSpeed = 100;
+  rSpeed = 100;
+  setMotors(1,1,rSpeed,lSpeed);
+  lBump = digitalRead(LEFT_BUMPER_PIN);
+  rBump = digitalRead(RIGHT_BUMPER_PIN);
+
+  while(lBump==1 && rBump == 1){
+    lLev = getColor(left);
+    rLev = getColor(right);
+    mLev = getColor(middle);
+    lBump = digitalRead(LEFT_BUMPER_PIN);
+    rBump = digitalRead(RIGHT_BUMPER_PIN);
+    
+    if(lLev && !rLev){
+      lSpeed = 100;
+      rSpeed = 160;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("TURN LEFT");
+    }
+    else if(!lLev && rLev){
+      lSpeed = 160;
+      rSpeed = 100;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("TURN RIGHT");
+    }
+    else if(!lLev && !rLev && mLev){
+      lSpeed = 120;
+      rSpeed = 120;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("DRIVE STRAIGHT");
+    }
+  }
+  lSpeed = 100;
+  rSpeed = 100;
+  setMotors(0,0,rSpeed,lSpeed);
+  delay(300);
   lSpeed = 0;
   rSpeed = 0;
-  
-  setMotors(0,0);
+  setMotors(0,0,rSpeed,lSpeed);
   setPan(90);
   lowerArm();
   while(gripValue <= gripThres) {
@@ -118,43 +217,109 @@ void grabBall(){
       Serial.println(gripAngle);
     }
   setTilt(180);
+  driveRotate(180,0);
 }
-
-void lineTrack(){
+void driveToCross(int d){
   lSpeed = 100;
   rSpeed = 100;
-  //setMotors(1,1);
-  lBump = digitalRead(LEFT_BUMPER_PIN);
-  rBump = digitalRead(RIGHT_BUMPER_PIN);
-  
-  while(lBump==1 && rBump == 1){
+  setMotors(1,1,rSpeed,lSpeed);
+  lLev = getColor(left);
+  rLev = getColor(right);
+  mLev = getColor(middle);
+  int x = 1;
+  while(x==1){
     lLev = getColor(left);
     rLev = getColor(right);
-    mLev = getColor(middle);
-    lBump = digitalRead(LEFT_BUMPER_PIN);
-    rBump = digitalRead(RIGHT_BUMPER_PIN);
+    mLev = getColor(middle);  
     
     if(lLev && !rLev){
-      lSpeed = 120;
-      rSpeed = 140;
-      //setMotors(1,1);
+      lSpeed = 100;
+      rSpeed = 160;
+      setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN LEFT");
     }
     else if(!lLev && rLev){
-      lSpeed = 140;
-      rSpeed = 120;
-      //setMotors(1,1);
+      lSpeed = 160;
+      rSpeed = 100;
+      setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN RIGHT");
     }
     else if(!lLev && !rLev && mLev){
       lSpeed = 120;
       rSpeed = 120;
-      //setMotors(1,1);
+      setMotors(1,1,rSpeed,lSpeed);
       Serial.println("DRIVE STRAIGHT");
     }
+    else if(lLev && rLev && mLev){
+      if(d)
+        delay(200);
+      setMotors(0,0,0,0);
+      x=0;      
+    }
   }
+  setMotors(0,0,0,0);
+}
+void lowerArm(){
+  float angle = 180;
+  while(angle>=75){
+    angle = angle - 0.01;
+    setTilt(angle);
+  }  
+}
+int getColor(int pin){
+  if(analogRead(pin)>colourThres)
+    return  1;
+  return 0;
+}
+void setPan(int angle) {
+  panServo.write(angle);
+}
+void setGrip(int angle) {
+  gripServo.write(angle);
+}
+void setTilt(int angle) {
+  tiltServo.write(angle);
+}
+void setMotors(int Ldir, int Rdir,int rSpeed,int lSpeed) {
+  digitalWrite(LEFT_MOTOR_DIRECTION, Ldir);
+  analogWrite(LEFT_MOTOR_SPEED,lSpeed);
+  digitalWrite(RIGHT_MOTOR_DIRECTION, Rdir);
+  analogWrite(RIGHT_MOTOR_SPEED,rSpeed);
 }
 
+void driveRotate(int angle, int dir) {
+  if (angle == 90 && dir== 0) {
+    // Turn left
+    digitalWrite(LEFT_MOTOR_DIRECTION, LOW);
+    analogWrite(LEFT_MOTOR_SPEED, turnSpeed);
+    digitalWrite(RIGHT_MOTOR_DIRECTION, HIGH);
+    analogWrite(RIGHT_MOTOR_SPEED,  turnSpeed);
+    delay(600);
+    mLev = 0;
+    while(!mLev)
+    mLev = getColor(middle);
+  } else if (angle == 90 && dir == 1) {
+    // Turn right
+    digitalWrite(LEFT_MOTOR_DIRECTION, HIGH);
+    analogWrite(LEFT_MOTOR_SPEED,  turnSpeed);
+    digitalWrite(RIGHT_MOTOR_DIRECTION, LOW);
+    analogWrite(RIGHT_MOTOR_SPEED,  turnSpeed);
+    delay(600);
+    mLev = 0;
+    while(!mLev)
+    mLev = getColor(middle);
+  } else if (angle == 180) {
+    // Turn 180 degrees
+    digitalWrite(LEFT_MOTOR_DIRECTION, HIGH);
+    analogWrite(LEFT_MOTOR_SPEED,  turnSpeed);
+    digitalWrite(RIGHT_MOTOR_DIRECTION, LOW);
+    analogWrite(RIGHT_MOTOR_SPEED,  turnSpeed);
+    delay(600);
+    mLev = 0;
+    while(!mLev)
+    mLev = getColor(middle);
+  }
+}
 void getAnalogReadings(){
   //IRreceive();
   gripValue = analogRead(gripRead);
@@ -182,37 +347,4 @@ void getAnalogReadings(){
   Serial.println(IRval);
   Serial.print("\n");
   delay(1000);
-}
-void lowerArm(){
-  float angle = 180;
-  while(angle>=75){
-    angle = angle - 0.01;
-    setTilt(angle);
-  }  
-}
-
-int getColor(int pin){
-  if(analogRead(pin)>colourThres)
-    return  1;
-  return 0;
-}
-
-void setPan(int angle) {
-  panServo.write(angle);
-}
-
-void setGrip(int angle) {
-  gripServo.write(angle);
-}
-
-void setTilt(int angle) {
-  tiltServo.write(angle);
-}
-
-void setMotors(int Ldir, int Rdir) {
-  digitalWrite(LEFT_MOTOR_DIRECTION, Ldir);
-  analogWrite(LEFT_MOTOR_SPEED,lSpeed);
-  digitalWrite(RIGHT_MOTOR_DIRECTION, Rdir);
-  analogWrite(RIGHT_MOTOR_SPEED,rSpeed);
-  delay(200);
-}
+}// end driveRotate function
