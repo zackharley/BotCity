@@ -39,7 +39,7 @@
 #define maxGripAngle         75
 #define colourThres          915
 #define turnSpeed            90
-
+#define spd                  110
 //VARIABLE DECLARATION
 int gripValue = 0;
 double gripAngle = 50;
@@ -79,8 +79,8 @@ void setup() {
 void loop() {
       int ball = getIRNumber();
       Serial.print("SUCCESSFUL RETRIEVAL: ");
-//      setAndRetrieve(ball);
-//      Serial.println("COMPLETED CYCLE");
+      setAndRetrieve(ball);
+      Serial.println("COMPLETED CYCLE");
 }
   
 /////////////////////////////////////////////////
@@ -88,6 +88,7 @@ void loop() {
 /////////////////////////////////////////////////
 void setAndRetrieve(int N){
   setTilt(180);
+  setPan(90);
   if (N==0){
     driveRotate(90,1);
     getBall();    
@@ -210,20 +211,20 @@ void getBall(){
     rBump = digitalRead(RIGHT_BUMPER_PIN);
     
     if(lLev && !rLev){
-      lSpeed = 120;
-      rSpeed = 160;
+      lSpeed = spd;
+      rSpeed = spd+35;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN LEFT");
     }
     else if(!lLev && rLev){
-      lSpeed = 160;
-      rSpeed = 120;
+      lSpeed = spd+35;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN RIGHT");
     }
     else if(!lLev && !rLev && mLev){
-      lSpeed = 120;
-      rSpeed = 120;
+      lSpeed = spd;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("DRIVE STRAIGHT");
     }
@@ -268,20 +269,20 @@ void driveToCross(int d){
     mLev = getColor(middle);  
     
     if(lLev && !rLev){
-      lSpeed = 120;
-      rSpeed = 160;
+      lSpeed = spd;
+      rSpeed = spd+35;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN LEFT");
     }
     else if(!lLev && rLev){
-      lSpeed = 160;
-      rSpeed = 120;
+      lSpeed = spd+35;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN RIGHT");
     }
     else if(!lLev && !rLev && mLev){
-      lSpeed = 120;
-      rSpeed = 120;
+      lSpeed = spd;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("DRIVE STRAIGHT");
     }
@@ -309,20 +310,20 @@ void dunk(){
     rBump = digitalRead(RIGHT_BUMPER_PIN);
     
     if(lLev && !rLev){
-      lSpeed = 120;
-      rSpeed = 160;
+      lSpeed = spd;
+      rSpeed = spd+35;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN LEFT");
     }
     else if(!lLev && rLev){
-      lSpeed = 160;
-      rSpeed = 120;
+      lSpeed = spd+35;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN RIGHT");
     }
     else if(!lLev && !rLev && mLev){
-      lSpeed = 120;
-      rSpeed = 120;
+      lSpeed = spd;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("DRIVE STRAIGHT");
     }
