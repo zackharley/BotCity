@@ -10,14 +10,6 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-<<<<<<< HEAD
   IRserial.transmit('1');
-=======
-  if(Serial.available()==1)
-    trans = Serial.read();
-  Serial.print("Transmitting: ");
-  Serial.println(trans);
-  IRserial.transmit(trans);
->>>>>>> origin/master
   delay(100);
 }
