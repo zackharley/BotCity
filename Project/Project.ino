@@ -13,13 +13,12 @@
 #include <Servo.h>
 #include <QSerial.h>
 //  PIN CONFIGURATION
-
 // MOTOR ENCODERS & CONTROLLERS
 #define RIGHT_MOTOR_DIRECTION 2
 #define RIGHT_MOTOR_SPEED     3
 #define LEFT_MOTOR_DIRECTION  4
 #define LEFT_MOTOR_SPEED      5
-#define IRreciever            6
+#define IRreciever            9
 #define LEFT_BUMPER_PIN       7
 #define RIGHT_BUMPER_PIN      8
 
@@ -39,8 +38,8 @@
 #define gripThres            500
 #define maxGripAngle         75
 #define colourThres          915
-#define turnSpeed            85
-
+#define turnSpeed            90
+#define spd                  110
 //VARIABLE DECLARATION
 int gripValue = 0;
 double gripAngle = 50;
@@ -51,7 +50,6 @@ int lPrev = 0;
 int rPrev = 0;
 int mPrev = 0;
 int distance = 0;
-int IRval = -1;
 int lBump = 0;
 int rBump = 0;
 int lSpeed = 100;
@@ -60,8 +58,6 @@ Servo tiltServo, panServo, gripServo;
 QSerial IRserial;
 
 void setup() {
-  Serial.begin(9600);
-  pinMode(IRreciever,INPUT);
   pinMode(RIGHT_MOTOR_SPEED, OUTPUT);
   pinMode(LEFT_MOTOR_SPEED, OUTPUT);
   pinMode(LEFT_BUMPER_PIN, INPUT);
@@ -70,96 +66,136 @@ void setup() {
   panServo.attach(PAN);
   tiltServo.attach(TILT);
   gripServo.attach(GRIP);
-  IRserial.attach(IRreciever,-1);
-  
-  setTilt(180);
+
+  setTilt(90);
   setPan(90);
   setGrip(0);
-  delay(500);
+  
+  pinMode(9,INPUT);
+  IRserial.attach(9,-1);
+  Serial.begin(9600);
 }
 
 void loop() {
-  //int ball = getNumber();
-  //getAnalogReadings();
-  int ball = 0
-  ;
-  setAndRetrieve(ball);
-//  ball = 1;
-//  setAndRetrieve(ball);
-//  ball = 0; 
-//  setAndRetrieve(ball);
-  setMotors(0,0,0,0);
-  while(true);
+      int ball = getIRNumber();
+      Serial.print("SUCCESSFUL RETRIEVAL: ");
+      setAndRetrieve(ball);
+      Serial.println("COMPLETED CYCLE");
 }
+  
+/////////////////////////////////////////////////
+// PRIME METHOD FOR DICTATING PROCESSES
+/////////////////////////////////////////////////
 void setAndRetrieve(int N){
+  setTilt(180);
+  setPan(90);
   if (N==0){
     driveRotate(90,1);
     getBall();    
     driveToCross(1);
     driveRotate(90,0);
-    dunk();
   }
   else if (N==1){
     getBall();
-    dunk();
   }
   else if (N==2){
     driveRotate(90,0);
     getBall();    
     driveToCross(1);
     driveRotate(90,1);
-    dunk();
   }
+  dunk();
   driveToCross(0); 
 }
 //METHODS
-//SECTION 1: BASIC MOTOR CONTROL
-void IRreceive(){
-  IRval = -1;
-  while(IRval > 2 || IRval <0){
-  IRval = IRserial.receive(200);
-  IRval = IRval - 48;
-  }
+/////////////////////////////////////////////////
+//SECTION 1: BASIC MOTOR CONTROL & SENSOR READING
+/////////////////////////////////////////////////
+void setPan(int angle) {
+  panServo.write(angle);
 }
-void dunk(){
-  lSpeed = 100;
-  rSpeed = 100;
-  setMotors(1,1,rSpeed,lSpeed);
-  lBump = digitalRead(LEFT_BUMPER_PIN);
-  rBump = digitalRead(RIGHT_BUMPER_PIN);
+void setGrip(int angle) {
+  gripServo.write(angle);
+}
+void setTilt(int angle) {
+  tiltServo.write(angle);
+}
+int getColor(int pin){
+  if(analogRead(pin)>colourThres)
+    return  1;
+  return 0;
+}
+int IRreceive(){
+    int val = IRserial.receive(750);
+    Serial.println((char)val);
+    return val;
+}
+void setMotors(int Ldir, int Rdir,int rSpeed,int lSpeed) {
+  digitalWrite(LEFT_MOTOR_DIRECTION, Ldir);
+  analogWrite(LEFT_MOTOR_SPEED,lSpeed);
+  digitalWrite(RIGHT_MOTOR_DIRECTION, Rdir);
+  analogWrite(RIGHT_MOTOR_SPEED,rSpeed);
+}
+void lowerArm(){
+  float angle = 180;
+  while(angle>=75){
+    angle = angle - 0.01;
+    setTilt(angle);
+  }  
+}
+/////////////////////////////////////////////////
+//SECTION 2: IR & BLUETOOTH INFORMATION RETRIEVAL
+/////////////////////////////////////////////////
+int getBTNumber(){
+  int num = 0;
+  while(num < 48 || num > 50){
+    while(!Serial.available());
+    num = Serial.read();
+    Serial.println(num);
+  }
+  return num-48;
+}
 
-  while(lBump==1 && rBump == 1){
-    lLev = getColor(left);
-    rLev = getColor(right);
-    mLev = getColor(middle);
-    lBump = digitalRead(LEFT_BUMPER_PIN);
-    rBump = digitalRead(RIGHT_BUMPER_PIN);
-    
-    if(lLev && !rLev){
-      lSpeed = 100;
-      rSpeed = 160;
-      setMotors(1,1,rSpeed,lSpeed);
-      Serial.println("TURN LEFT");
+int getIRNumber(){
+  int IRval = -1;
+  int N = 0;
+  while(IRval > 50 || IRval < 48){
+    setTilt(90);
+    setPan(90);
+    delay(1000);
+    for(int i = 0; i <50; i++){
+      IRval = IRreceive();
+      if(IRval <= 50 && IRval >= 48)
+      i = 101;
     }
-    else if(!lLev && rLev){
-      lSpeed = 160;
-      rSpeed = 100;
-      setMotors(1,1,rSpeed,lSpeed);
-      Serial.println("TURN RIGHT");
+    if(IRval > 50 || IRval < 48){
+      Serial.println("Nothing Center");
+      setPan(0);
+      delay(1000);
+      for(int i = 0; i <50; i++){
+        IRval = IRreceive();
+        if(IRval <= 50 && IRval >= 48)
+           i = 101;
+      }
+      if(IRval > 50 || IRval < 48){
+          Serial.println("Nothing Left");
+          setPan(180);
+          delay(1000);
+          for(int i = 0; i <50; i++){
+             IRval = IRreceive();
+             if(IRval <= 50 && IRval >= 48)
+                 i = 101;
+          }
+          Serial.println("Nothing Right");
+        }
+     }
     }
-    else if(!lLev && !rLev && mLev){
-      lSpeed = 120;
-      rSpeed = 120;
-      setMotors(1,1,rSpeed,lSpeed);
-      Serial.println("DRIVE STRAIGHT");
-    }
-  }
-  setTilt(160);
-  setGrip(0);
-  setMotors(0,0,80,80);
-  delay(1000);
-  driveRotate(180,0);
+   return IRval-48;
 }
+///////////////////////////////////////////////////
+//SECTION 3: ADVANCED METHODS FOR TRAVERSING BOARD
+///////////////////////////////////////////////////
+
 void getBall(){
   lSpeed = 100;
   rSpeed = 100;
@@ -175,20 +211,20 @@ void getBall(){
     rBump = digitalRead(RIGHT_BUMPER_PIN);
     
     if(lLev && !rLev){
-      lSpeed = 100;
-      rSpeed = 160;
+      lSpeed = spd;
+      rSpeed = spd+35;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN LEFT");
     }
     else if(!lLev && rLev){
-      lSpeed = 160;
-      rSpeed = 100;
+      lSpeed = spd+35;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN RIGHT");
     }
     else if(!lLev && !rLev && mLev){
-      lSpeed = 120;
-      rSpeed = 120;
+      lSpeed = spd;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("DRIVE STRAIGHT");
     }
@@ -233,20 +269,20 @@ void driveToCross(int d){
     mLev = getColor(middle);  
     
     if(lLev && !rLev){
-      lSpeed = 100;
-      rSpeed = 160;
+      lSpeed = spd;
+      rSpeed = spd+35;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN LEFT");
     }
     else if(!lLev && rLev){
-      lSpeed = 160;
-      rSpeed = 100;
+      lSpeed = spd+35;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("TURN RIGHT");
     }
     else if(!lLev && !rLev && mLev){
-      lSpeed = 120;
-      rSpeed = 120;
+      lSpeed = spd;
+      rSpeed = spd;
       setMotors(1,1,rSpeed,lSpeed);
       Serial.println("DRIVE STRAIGHT");
     }
@@ -259,34 +295,45 @@ void driveToCross(int d){
   }
   setMotors(0,0,0,0);
 }
-void lowerArm(){
-  float angle = 180;
-  while(angle>=75){
-    angle = angle - 0.01;
-    setTilt(angle);
-  }  
-}
-int getColor(int pin){
-  if(analogRead(pin)>colourThres)
-    return  1;
-  return 0;
-}
-void setPan(int angle) {
-  panServo.write(angle);
-}
-void setGrip(int angle) {
-  gripServo.write(angle);
-}
-void setTilt(int angle) {
-  tiltServo.write(angle);
-}
-void setMotors(int Ldir, int Rdir,int rSpeed,int lSpeed) {
-  digitalWrite(LEFT_MOTOR_DIRECTION, Ldir);
-  analogWrite(LEFT_MOTOR_SPEED,lSpeed);
-  digitalWrite(RIGHT_MOTOR_DIRECTION, Rdir);
-  analogWrite(RIGHT_MOTOR_SPEED,rSpeed);
-}
+void dunk(){
+  lSpeed = 100;
+  rSpeed = 100;
+  setMotors(1,1,rSpeed,lSpeed);
+  lBump = digitalRead(LEFT_BUMPER_PIN);
+  rBump = digitalRead(RIGHT_BUMPER_PIN);
 
+  while(lBump==1 && rBump == 1){
+    lLev = getColor(left);
+    rLev = getColor(right);
+    mLev = getColor(middle);
+    lBump = digitalRead(LEFT_BUMPER_PIN);
+    rBump = digitalRead(RIGHT_BUMPER_PIN);
+    
+    if(lLev && !rLev){
+      lSpeed = spd;
+      rSpeed = spd+35;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("TURN LEFT");
+    }
+    else if(!lLev && rLev){
+      lSpeed = spd+35;
+      rSpeed = spd;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("TURN RIGHT");
+    }
+    else if(!lLev && !rLev && mLev){
+      lSpeed = spd;
+      rSpeed = spd;
+      setMotors(1,1,rSpeed,lSpeed);
+      Serial.println("DRIVE STRAIGHT");
+    }
+  }
+  setTilt(160);
+  setGrip(0);
+  setMotors(0,0,80,80);
+  delay(1000);
+  driveRotate(180,0);
+}
 void driveRotate(int angle, int dir) {
   if (angle == 90 && dir== 0) {
     // Turn left
@@ -311,17 +358,20 @@ void driveRotate(int angle, int dir) {
   } else if (angle == 180) {
     // Turn 180 degrees
     digitalWrite(LEFT_MOTOR_DIRECTION, HIGH);
-    analogWrite(LEFT_MOTOR_SPEED,  turnSpeed);
+    analogWrite(LEFT_MOTOR_SPEED,  turnSpeed+10);
     digitalWrite(RIGHT_MOTOR_DIRECTION, LOW);
-    analogWrite(RIGHT_MOTOR_SPEED,  turnSpeed);
+    analogWrite(RIGHT_MOTOR_SPEED,  turnSpeed+10);
     delay(600);
     mLev = 0;
     while(!mLev)
     mLev = getColor(middle);
   }
 }
+///////////////////////////////////////////////////
+// SECTION 4: DEBUGGING TOOL FOR ANALOG READINGS
+///////////////////////////////////////////////////
 void getAnalogReadings(){
-  //IRreceive();
+  int IRval = IRreceive();
   gripValue = analogRead(gripRead);
   distance = analogRead(IRsensor);
   lLev =  analogRead(left);
@@ -347,4 +397,4 @@ void getAnalogReadings(){
   Serial.println(IRval);
   Serial.print("\n");
   delay(1000);
-}// end driveRotate function
+}
